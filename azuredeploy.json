@@ -124,7 +124,8 @@
       "type": "string",
       "metadata": {
         "description": "The URI of the PowerShell Custom Script."
-      }
+      },
+      "defaultValue": "https://raw.githubusercontent.com/devkimchi/LiveStream-VM-Setup-Sample/main/install.ps1"
     }
   },
 

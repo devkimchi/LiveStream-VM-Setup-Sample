@@ -16,9 +16,6 @@
     },
     "virtualMachineAdminPassword": {
       "value": "<admin-password>"
-    },
-    "virtualMachineExtensionCustomScriptUri": {
-      "value": "<script-uri>"
     }
   }
 }
