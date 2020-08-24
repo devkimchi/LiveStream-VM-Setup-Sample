@@ -14,10 +14,10 @@
         "description": "Resource suffix"
       }
     },
-    "region": {
+    "location": {
       "type": "string",
       "metadata": {
-        "description": "Resource region."
+        "description": "Resource location"
       },
       "allowedValues": [
         "australiaeast",
@@ -26,10 +26,10 @@
       ],
       "defaultValue": "[resourceGroup().location]"
     },
-    "regionCode": {
+    "locationCode": {
       "type": "string",
       "metadata": {
-        "description": "Region code"
+        "description": "Resource location code"
       },
       "allowedValues": [
         "aue",
@@ -130,14 +130,14 @@
 
   "variables": {
     "metadata": {
-      "longName": "[concat('{0}-', parameters('name'), '-', parameters('regionCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', concat('-', parameters('suffix'))))]",
-      "shortName": "[concat('{0}', replace(parameters('name'), '-', ''), parameters('regionCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', parameters('suffix')))]"
+      "longName": "[concat('{0}-', parameters('name'), '-', parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', concat('-', parameters('suffix'))))]",
+      "shortName": "[concat('{0}', replace(parameters('name'), '-', ''), parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', parameters('suffix')))]"
     },
     "storageAccount": {
       "name": "[replace(variables('metadata').shortName, '{0}', 'st')]",
       "apiVersion": "[providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Storage/storageAccounts', replace(variables('metadata').shortName, '{0}', 'st'))]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "Standard_LRS"
       }
@@ -146,7 +146,7 @@
       "name": "[replace(variables('metadata').longName, '{0}', 'pip')]",
       "apiVersion": "[providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/publicIPAddresses', replace(variables('metadata').longName, '{0}', 'pip'))]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -158,7 +158,7 @@
       "name": "[replace(variables('metadata').longName, '{0}', 'nsg')]",
       "apiVersion": "[providers('Microsoft.Network', 'networkSecurityGroups').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/networkSecurityGroups', replace(variables('metadata').longName, '{0}', 'nsg'))]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
@@ -181,7 +181,7 @@
       "name": "[replace(variables('metadata').longName, '{0}', 'vnet')]",
       "apiVersion": "[providers('Microsoft.Network', 'virtualNetworks').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/virtualNetworks', replace(variables('metadata').longName, '{0}', 'vnet'))]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -204,13 +204,13 @@
     "virtualNetworkSubnet": {
       "name": "[concat(replace(variables('metadata').longName, '{0}', 'vnet'), '/default')]",
       "resourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', replace(variables('metadata').longName, '{0}', 'vnet'), 'default')]",
-      "location": "[parameters('region')]"
+      "location": "[parameters('location')]"
     },
     "networkInterface": {
       "name": "[replace(variables('metadata').longName, '{0}', 'nic')]",
       "apiVersion": "[providers('Microsoft.Network', 'networkInterfaces').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/networkInterfaces', replace(variables('metadata').longName, '{0}', 'nic'))]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "properties": {
         "ipConfigurations": [
           {
@@ -232,7 +232,7 @@
       "name": "[replace(variables('metadata').shortName, '{0}', 'vm')]",
       "apiVersion": "[providers('Microsoft.Compute', 'virtualMachines').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Compute/virtualMachines', replace(variables('metadata').shortName, '{0}', 'vm'))]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('virtualMachineSize')]"
@@ -269,7 +269,7 @@
       "name": "[concat(replace(variables('metadata').shortName, '{0}', 'vm'), '/config-app')]",
       "apiVersion": "[providers('Microsoft.Compute', 'virtualMachines/extensions').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Compute/virtualMachines/extensions', replace(variables('metadata').shortName, '{0}', 'vm'), 'config-app')]",
-      "location": "[parameters('region')]",
+      "location": "[parameters('location')]",
       "properties": {
         "settings": {
           "fileUris": [
