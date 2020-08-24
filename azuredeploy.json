@@ -14,10 +14,10 @@
         "description": "Resource suffix"
       }
     },
-    "location": {
+    "region": {
       "type": "string",
       "metadata": {
-        "description": "Resource location."
+        "description": "Resource region."
       },
       "allowedValues": [
         "australiaeast",
@@ -26,10 +26,10 @@
       ],
       "defaultValue": "[resourceGroup().location]"
     },
-    "locationCode": {
+    "regionCode": {
       "type": "string",
       "metadata": {
-        "description": "Location code"
+        "description": "Region code"
       },
       "allowedValues": [
         "aue",
@@ -39,7 +39,7 @@
       "defaultValue": "krc"
     },
 
-    "publicIpDnsLabelPrefix": {
+    "publicIpDnsLabel": {
       "type": "string",
       "metadata": {
         "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
@@ -127,16 +127,17 @@
       }
     }
   },
+
   "variables": {
     "metadata": {
-      "longName": "[concat('{0}-', parameters('name'), '-', parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', concat('-', parameters('suffix'))))]",
-      "shortName": "[concat('{0}', replace(parameters('name'), '-', ''), parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', parameters('suffix')))]"
+      "longName": "[concat('{0}-', parameters('name'), '-', parameters('regionCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', concat('-', parameters('suffix'))))]",
+      "shortName": "[concat('{0}', replace(parameters('name'), '-', ''), parameters('regionCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', parameters('suffix')))]"
     },
     "storageAccount": {
       "name": "[replace(variables('metadata').shortName, '{0}', 'st')]",
       "apiVersion": "[providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Storage/storageAccounts', replace(variables('metadata').shortName, '{0}', 'st'))]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "sku": {
         "name": "Standard_LRS"
       }
@@ -145,11 +146,11 @@
       "name": "[replace(variables('metadata').longName, '{0}', 'pip')]",
       "apiVersion": "[providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/publicIPAddresses', replace(variables('metadata').longName, '{0}', 'pip'))]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
-          "domainNameLabel": "[parameters('publicIpDnsLabelPrefix')]"
+          "domainNameLabel": "[if(equals(coalesce(parameters('publicIpDnsLabel'), ''), ''), replace(variables('metadata').shortName, '{0}', 'vm'), parameters('publicIpDnsLabel'))]"
         }
       }
     },
@@ -157,7 +158,7 @@
       "name": "[replace(variables('metadata').longName, '{0}', 'nsg')]",
       "apiVersion": "[providers('Microsoft.Network', 'networkSecurityGroups').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/networkSecurityGroups', replace(variables('metadata').longName, '{0}', 'nsg'))]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "properties": {
         "securityRules": [
           {
@@ -180,7 +181,7 @@
       "name": "[replace(variables('metadata').longName, '{0}', 'vnet')]",
       "apiVersion": "[providers('Microsoft.Network', 'virtualNetworks').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/virtualNetworks', replace(variables('metadata').longName, '{0}', 'vnet'))]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -202,15 +203,14 @@
     },
     "virtualNetworkSubnet": {
       "name": "[concat(replace(variables('metadata').longName, '{0}', 'vnet'), '/default')]",
-      "apiVersion": "[providers('Microsoft.Network', 'virtualNetworks/subnets').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', replace(variables('metadata').longName, '{0}', 'vnet'), 'default')]",
-      "location": "[parameters('location')]"
+      "location": "[parameters('region')]"
     },
     "networkInterface": {
       "name": "[replace(variables('metadata').longName, '{0}', 'nic')]",
       "apiVersion": "[providers('Microsoft.Network', 'networkInterfaces').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Network/networkInterfaces', replace(variables('metadata').longName, '{0}', 'nic'))]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "properties": {
         "ipConfigurations": [
           {
@@ -232,7 +232,7 @@
       "name": "[replace(variables('metadata').shortName, '{0}', 'vm')]",
       "apiVersion": "[providers('Microsoft.Compute', 'virtualMachines').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Compute/virtualMachines', replace(variables('metadata').shortName, '{0}', 'vm'))]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('virtualMachineSize')]"
@@ -269,7 +269,7 @@
       "name": "[concat(replace(variables('metadata').shortName, '{0}', 'vm'), '/config-app')]",
       "apiVersion": "[providers('Microsoft.Compute', 'virtualMachines/extensions').apiVersions[0]]",
       "resourceId": "[resourceId('Microsoft.Compute/virtualMachines/extensions', replace(variables('metadata').shortName, '{0}', 'vm'), 'config-app')]",
-      "location": "[parameters('location')]",
+      "location": "[parameters('region')]",
       "properties": {
         "settings": {
           "fileUris": [
@@ -282,6 +282,7 @@
       }
     }
   },
+
   "resources": [
     {
       "comments": "=== STORAGE ACCOUNT ===",
@@ -408,10 +409,6 @@
       }
     }
   ],
-  "outputs": {
-    "hostname": {
-      "type": "string",
-      "value": "[reference(variables('publicIp').resourceId).dnsSettings.fqdn]"
-    }
-  }
+
+  "outputs": {}
 }

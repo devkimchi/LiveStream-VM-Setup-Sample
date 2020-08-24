@@ -8,7 +8,7 @@
     "suffix": {
       "value": "<resource-name-suffix>"
     },
-    "publicIpDnsLabelPrefix": {
+    "publicIpDnsLabel": {
       "value": ""
     },
     "virtualMachineAdminUsername": {
