@@ -8,7 +8,7 @@ This provides a sample ARM template and custom PowerShell script to install appl
 * 한국어:
   * [초콜라티로 애저 VM 위에 라이브 스트리밍을 위한 애플리케이션 자동 설치하기](https://blog.aliencube.org/ko/2020/08/26/app-provisioning-on-azure-vm-with-chocolatey-for-live-streaming/)
   * [파워 플랫폼으로 일회성 애저 리소스 프로비저닝하기](https://blog.aliencube.org/ko/2020/09/02/ad-hoc-azure-resource-provisioning-via-power-platform/)
-* ENglish:
+* English:
   * [Auto-installing Applications on Azure VM with Chocolatey for Live Streaming](https://devkimchi.com/2020/08/26/app-provisioning-on-azure-vm-with-chocolatey-for-live-streaming/)
   * [Ad-hoc Azure Resource Provisioning via Power Platform](https://devkimchi.com/2020/09/02/ad-hoc-azure-resource-provisioning-via-power-platform/)
 
