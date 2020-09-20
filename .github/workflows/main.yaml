@@ -1,0 +1,30 @@
+name: ARM Template Build and Test
+
+on: [ push, pull_request ]
+
+jobs:
+  build_and_test:
+    name: Build and Test
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v2
+
+    - name: Run Bicep build
+      uses: aliencube/bicep-build-actions@v0.1
+      with:
+        files: '**/*.bicep'
+
+    - name: Run ARM TTK
+      uses: aliencube/arm-ttk-actions@v0.3
+      id: armtest
+      with:
+        path: ./bicep
+
+    - name: Show ARM TTK test result
+      shell: bash
+      continue-on-error: true
+      run: |
+        echo 'Results: ${{ toJSON(fromJSON(steps.armtest.outputs.results)) }}'

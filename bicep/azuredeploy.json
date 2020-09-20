@@ -162,7 +162,6 @@
       "vmImageOffer": "[parameters('virtualMachineOffer')]",
       "vmImageSku": "[parameters('virtualMachineSku')]",
       "vmOSDiskName": "[replace(variables('metadata').longName, '{0}', 'osdisk')]",
-      "vmDataDisks": [],
       "networkInterfaces": [
         {
           "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterface').name)]"
@@ -181,7 +180,7 @@
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2017-10-01",
+      "apiVersion": "2019-06-01",
       "name": "[variables('storageAccount').name]",
       "location": "[variables('storageAccount').location]",
       "kind": "StorageV2",
@@ -191,7 +190,7 @@
     },
     {
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2018-07-01",
+      "apiVersion": "2020-06-01",
       "name": "[variables('publicIp').name]",
       "location": "[variables('publicIp').location]",
       "properties": {
@@ -203,7 +202,7 @@
     },
     {
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2018-07-01",
+      "apiVersion": "2020-06-01",
       "name": "[variables('networkSecurityGroup').name]",
       "location": "[variables('networkSecurityGroup').location]",
       "properties": {
@@ -212,7 +211,7 @@
     },
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2018-07-01",
+      "apiVersion": "2020-06-01",
       "name": "[variables('virtualNetwork').name]",
       "location": "[variables('virtualNetwork').location]",
       "properties": {
@@ -227,7 +226,7 @@
     },
     {
       "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2018-07-01",
+      "apiVersion": "2020-06-01",
       "name": "[variables('networkInterface').name]",
       "location": "[variables('networkInterface').location]",
       "properties": {
@@ -263,8 +262,7 @@
             "name": "[variables('virtualMachine').vmOSDiskName]",
             "caching": "ReadWrite",
             "createOption": "FromImage"
-          },
-          "dataDisks": "[variables('virtualMachine').vmDataDisks]"
+          }
         },
         "networkProfile": {
           "networkInterfaces": "[variables('virtualMachine').networkInterfaces]"
@@ -294,8 +292,7 @@
         "settings": {
           "fileUris": "[variables('virtualMachineExtensionCustomScript').fileUris]",
           "commandToExecute": "[variables('virtualMachineExtensionCustomScript').commandToExecute]"
-        },
-        "protectedSettings": {}
+        }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', variables('virtualMachine').name)]"

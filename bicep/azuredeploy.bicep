@@ -85,7 +85,7 @@ var storageAccount = {
   location: location
 }
 
-resource st 'Microsoft.Storage/storageAccounts@2017-10-01' = {
+resource st 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccount.name
   location: storageAccount.location
   kind: 'StorageV2'
@@ -100,7 +100,7 @@ var publicIp = {
   location: location
 }
 
-resource pip 'Microsoft.Network/publicIPAddresses@2018-07-01' = {
+resource pip 'Microsoft.Network/publicIPAddresses@2020-06-01' = {
   name: publicIp.name
   location: publicIp.location
   properties: {
@@ -132,7 +132,7 @@ var networkSecurityGroup = {
   ]
 }
 
-resource nsg 'Microsoft.Network/networkSecurityGroups@2018-07-01' = {
+resource nsg 'Microsoft.Network/networkSecurityGroups@2020-06-01' = {
   name: networkSecurityGroup.name
   location: networkSecurityGroup.location
   properties: {
@@ -159,7 +159,7 @@ var virtualNetwork = {
   ]
 }
 
-resource vnet 'Microsoft.Network/virtualNetworks@2018-07-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2020-06-01' = {
   name: virtualNetwork.name
   location: virtualNetwork.location
   properties: {
@@ -190,7 +190,7 @@ var networkInterface = {
   ]
 }
 
-resource nic 'Microsoft.Network/networkInterfaces@2018-07-01' = {
+resource nic 'Microsoft.Network/networkInterfaces@2020-06-01' = {
   name: networkInterface.name
   location: networkInterface.location
   properties: {
@@ -214,7 +214,7 @@ var virtualMachine = {
 
   vmOSDiskName: replace(metadata.longName, '{0}', 'osdisk')
 
-  vmDataDisks: []
+//   vmDataDisks: []
 
   networkInterfaces: [
     {
@@ -247,7 +247,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2018-10-01' = {
         caching: 'ReadWrite'
         createOption: 'FromImage'
       }
-      dataDisks: virtualMachine.vmDataDisks
+    //   dataDisks: virtualMachine.vmDataDisks
     }
     networkProfile: {
       networkInterfaces: virtualMachine.networkInterfaces
@@ -283,6 +283,6 @@ resource vmext 'Microsoft.Compute/virtualMachines/extensions@2018-10-01' = {
       fileUris: virtualMachineExtensionCustomScript.fileUris
       commandToExecute: virtualMachineExtensionCustomScript.commandToExecute
     }
-    protectedSettings: {}
+    // protectedSettings: {}
   }
 }
