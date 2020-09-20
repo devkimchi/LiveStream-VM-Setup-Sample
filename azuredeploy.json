@@ -3,151 +3,196 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "name": {
-      "type": "string",
-      "metadata": {
-        "description": "Resource name"
-      }
+      "type": "string"
     },
     "suffix": {
-      "type": "string",
-      "metadata": {
-        "description": "Resource suffix"
-      }
+      "type": "string"
     },
     "location": {
       "type": "string",
-      "metadata": {
-        "description": "Resource location"
-      },
+      "defaultValue": "[resourceGroup().location]",
       "allowedValues": [
         "australiaeast",
         "koreacentral",
         "westus2"
-      ],
-      "defaultValue": "[resourceGroup().location]"
+      ]
     },
     "locationCode": {
       "type": "string",
-      "metadata": {
-        "description": "Resource location code"
-      },
+      "defaultValue": "krc",
       "allowedValues": [
         "aue",
         "krc",
         "wus2"
-      ],
-      "defaultValue": "krc"
+      ]
     },
-
     "publicIpDnsLabel": {
-      "type": "string",
-      "metadata": {
-        "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
-      }
+      "type": "string"
     },
-
     "virtualNetworkAddressPrefix": {
       "type": "string",
-      "metadata": {
-        "description": "CIDR notation of the Virtual Networks."
-      },
       "defaultValue": "10.0.0.0/16"
     },
     "virtualNetworkSubnetPrefix": {
       "type": "string",
-      "metadata": {
-        "description": "CIDR notation of the Virtual Network Subnets."
-      },
       "defaultValue": "10.0.0.0/24"
     },
-
     "virtualMachineAdminUsername": {
-      "type": "string",
-      "metadata": {
-        "description": "Username for the Virtual Machine."
-      }
+      "type": "string"
     },
     "virtualMachineAdminPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Password for the Virtual Machine."
-      }
+      "type": "secureString"
     },
     "virtualMachineSize": {
       "type": "string",
-      "metadata": {
-        "description": "Size of the Virtual Machine."
-      },
+      "defaultValue": "Standard_D8s_v3",
       "allowedValues": [
         "Standard_D2s_v3",
         "Standard_D4s_v3",
         "Standard_D8s_v3"
-      ],
-      "defaultValue": "Standard_D8s_v3"
+      ]
     },
     "virtualMachinePublisher": {
       "type": "string",
-      "metadata": {
-        "description": "The publisher of the Virtual Machine"
-      },
+      "defaultValue": "MicrosoftWindowsDesktop",
       "allowedValues": [
         "MicrosoftVisualStudio",
         "MicrosoftWindowsDesktop"
-      ],
-      "defaultValue": "MicrosoftWindowsDesktop"
+      ]
     },
     "virtualMachineOffer": {
       "type": "string",
-      "metadata": {
-        "description": "The publisher of the Virtual Machine"
-      },
+      "defaultValue": "Windows-10",
       "allowedValues": [
         "visualstudio2019latest",
         "Windows-10"
-      ],
-      "defaultValue": "Windows-10"
+      ]
     },
     "virtualMachineSku": {
       "type": "string",
-      "metadata": {
-        "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
-      },
+      "defaultValue": "20h1-pro-g2",
       "allowedValues": [
         "vs-2019-comm-latest-ws2019",
         "vs-2019-ent-latest-ws2019",
         "20h1-pro-g2",
         "20h1-ent-g2"
-      ],
-      "defaultValue": "20h1-pro-g2"
+      ]
     },
     "virtualMachineExtensionCustomScriptUri": {
       "type": "string",
-      "metadata": {
-        "description": "The URI of the PowerShell Custom Script."
-      },
       "defaultValue": "https://raw.githubusercontent.com/devkimchi/LiveStream-VM-Setup-Sample/main/install.ps1"
     }
   },
-
+  "functions": [],
   "variables": {
     "metadata": {
-      "longName": "[concat('{0}-', parameters('name'), '-', parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', concat('-', parameters('suffix'))))]",
-      "shortName": "[concat('{0}', replace(parameters('name'), '-', ''), parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', parameters('suffix')))]"
+      "longName": "[format('{{0}}-{0}-{1}{2}', parameters('name'), parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', concat('-', parameters('suffix'))))]",
+      "shortName": "[format('{{0}}{0}{1}{2}', replace(parameters('name'), '-', ''), parameters('locationCode'), if(equals(coalesce(parameters('suffix'), ''), ''), '', parameters('suffix')))]"
     },
     "storageAccount": {
       "name": "[replace(variables('metadata').shortName, '{0}', 'st')]",
-      "apiVersion": "[providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Storage/storageAccounts', replace(variables('metadata').shortName, '{0}', 'st'))]",
+      "location": "[parameters('location')]"
+    },
+    "publicIp": {
+      "name": "[replace(variables('metadata').longName, '{0}', 'pip')]",
+      "location": "[parameters('location')]"
+    },
+    "networkSecurityGroup": {
+      "name": "[replace(variables('metadata').longName, '{0}', 'nsg')]",
       "location": "[parameters('location')]",
+      "securityRules": [
+        {
+          "name": "default-allow-3389",
+          "properties": {
+            "priority": 1000,
+            "access": "Allow",
+            "direction": "Inbound",
+            "protocol": "TCP",
+            "sourcePortRange": "*",
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "*",
+            "destinationPortRange": 3389
+          }
+        }
+      ]
+    },
+    "subnetName": "default",
+    "virtualNetwork": {
+      "name": "[replace(variables('metadata').longName, '{0}', 'vnet')]",
+      "location": "[parameters('location')]",
+      "addressPrefixes": "[parameters('virtualNetworkAddressPrefix')]",
+      "subnets": [
+        {
+          "name": "[variables('subnetName')]",
+          "properties": {
+            "addressPrefix": "[parameters('virtualNetworkSubnetPrefix')]",
+            "networkSecurityGroup": {
+              "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroup').name)]"
+            }
+          }
+        }
+      ]
+    },
+    "networkInterface": {
+      "name": "[replace(variables('metadata').longName, '{0}', 'nic')]",
+      "location": "[parameters('location')]",
+      "ipConfigurations": [
+        {
+          "name": "ipconfig1",
+          "properties": {
+            "privateIPAllocationMethod": "Dynamic",
+            "publicIPAddress": {
+              "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIp').name)]"
+            },
+            "subnet": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork').name, variables('subnetName'))]"
+            }
+          }
+        }
+      ]
+    },
+    "virtualMachine": {
+      "name": "[replace(variables('metadata').shortName, '{0}', 'vm')]",
+      "location": "[parameters('location')]",
+      "vmSize": "[parameters('virtualMachineSize')]",
+      "vmComputerName": "[replace(variables('metadata').shortName, '{0}', 'vm')]",
+      "vmAdminUsername": "[parameters('virtualMachineAdminUsername')]",
+      "vmAdminPassword": "[parameters('virtualMachineAdminPassword')]",
+      "vmImagePublisher": "[parameters('virtualMachinePublisher')]",
+      "vmImageOffer": "[parameters('virtualMachineOffer')]",
+      "vmImageSku": "[parameters('virtualMachineSku')]",
+      "vmOSDiskName": "[replace(variables('metadata').longName, '{0}', 'osdisk')]",
+      "networkInterfaces": [
+        {
+          "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterface').name)]"
+        }
+      ]
+    },
+    "virtualMachineExtensionCustomScript": {
+      "name": "[format('{0}/config-app', variables('virtualMachine').name)]",
+      "location": "[parameters('location')]",
+      "fileUris": [
+        "[parameters('virtualMachineExtensionCustomScriptUri')]"
+      ],
+      "commandToExecute": "[format('powershell -ExecutionPolicy Unrestricted -File ./{0}', last(split(parameters('virtualMachineExtensionCustomScriptUri'), '/')))]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "name": "[variables('storageAccount').name]",
+      "location": "[variables('storageAccount').location]",
+      "kind": "StorageV2",
       "sku": {
         "name": "Standard_LRS"
       }
     },
-    "publicIp": {
-      "name": "[replace(variables('metadata').longName, '{0}', 'pip')]",
-      "apiVersion": "[providers('Microsoft.Network', 'publicIPAddresses').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Network/publicIPAddresses', replace(variables('metadata').longName, '{0}', 'pip'))]",
-      "location": "[parameters('location')]",
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('publicIp').name]",
+      "location": "[variables('publicIp').location]",
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
@@ -155,261 +200,104 @@
         }
       }
     },
-    "networkSecurityGroup": {
-      "name": "[replace(variables('metadata').longName, '{0}', 'nsg')]",
-      "apiVersion": "[providers('Microsoft.Network', 'networkSecurityGroups').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Network/networkSecurityGroups', replace(variables('metadata').longName, '{0}', 'nsg'))]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "securityRules": [
-          {
-            "name": "default-allow-3389",
-            "properties": {
-              "priority": 1000,
-              "access": "Allow",
-              "direction": "Inbound",
-              "protocol": "TCP",
-              "sourcePortRange": "*",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "destinationPortRange": "3389"
-            }
-          }
-        ]
-      }
-    },
-    "virtualNetwork": {
-      "name": "[replace(variables('metadata').longName, '{0}', 'vnet')]",
-      "apiVersion": "[providers('Microsoft.Network', 'virtualNetworks').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Network/virtualNetworks', replace(variables('metadata').longName, '{0}', 'vnet'))]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "addressSpace": {
-          "addressPrefixes": [
-            "[parameters('virtualNetworkAddressPrefix')]"
-          ]
-        },
-        "subnets": [
-          {
-            "name": "default",
-            "properties": {
-              "addressPrefix": "[parameters('virtualNetworkSubnetPrefix')]",
-              "networkSecurityGroup": {
-                "id": "[variables('networkSecurityGroup').resourceId]"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "virtualNetworkSubnet": {
-      "name": "[concat(replace(variables('metadata').longName, '{0}', 'vnet'), '/default')]",
-      "resourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', replace(variables('metadata').longName, '{0}', 'vnet'), 'default')]",
-      "location": "[parameters('location')]"
-    },
-    "networkInterface": {
-      "name": "[replace(variables('metadata').longName, '{0}', 'nic')]",
-      "apiVersion": "[providers('Microsoft.Network', 'networkInterfaces').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Network/networkInterfaces', replace(variables('metadata').longName, '{0}', 'nic'))]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "ipconfig1",
-            "properties": {
-              "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": {
-                "id": "[variables('publicIp').resourceId]"
-              },
-              "subnet": {
-                "id": "[variables('virtualNetworkSubnet').resourceId]"
-              }
-            }
-          }
-        ]
-      }
-    },
-    "virtualMachine": {
-      "name": "[replace(variables('metadata').shortName, '{0}', 'vm')]",
-      "apiVersion": "[providers('Microsoft.Compute', 'virtualMachines').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Compute/virtualMachines', replace(variables('metadata').shortName, '{0}', 'vm'))]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[parameters('virtualMachineSize')]"
-        },
-        "osProfile": {
-          "computerName": "[replace(variables('metadata').shortName, '{0}', 'vm')]",
-          "adminUsername": "[parameters('virtualMachineAdminUsername')]",
-          "adminPassword": "[parameters('virtualMachineAdminPassword')]"
-        },
-        "storageProfile": {
-          "imageReference": {
-            "publisher": "[parameters('virtualMachinePublisher')]",
-            "offer": "[parameters('virtualMachineOffer')]",
-            "sku": "[parameters('virtualMachineSku')]",
-            "version": "latest"
-          },
-          "osDisk": {
-            "name": "[replace(variables('metadata').longName, '{0}', 'osdisk')]",
-            "caching": "ReadWrite",
-            "createOption": "FromImage"
-          },
-          "dataDisks": []
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-              "id": "[variables('networkInterface').resourceId]"
-            }
-          ]
-        }
-      }
-    },
-    "virtualMachineExtensionCustomScript": {
-      "name": "[concat(replace(variables('metadata').shortName, '{0}', 'vm'), '/config-app')]",
-      "apiVersion": "[providers('Microsoft.Compute', 'virtualMachines/extensions').apiVersions[0]]",
-      "resourceId": "[resourceId('Microsoft.Compute/virtualMachines/extensions', replace(variables('metadata').shortName, '{0}', 'vm'), 'config-app')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "settings": {
-          "fileUris": [
-            "[parameters('virtualMachineExtensionCustomScriptUri')]"
-          ]
-        },
-        "protectedSettings": {
-          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', './', last(split(parameters('virtualMachineExtensionCustomScriptUri'), '/')))]"
-        }
-      }
-    }
-  },
-
-  "resources": [
     {
-      "comments": "=== STORAGE ACCOUNT ===",
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "[variables('storageAccount').apiVersion]",
-      "name": "[variables('storageAccount').name]",
-      "location": "[variables('storageAccount').location]",
-      "kind": "StorageV2",
-      "sku": "[variables('storageAccount').sku]"
-    },
-    {
-      "comments": "=== PUBLIC IP ADDRESS ===",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "[variables('publicIp').apiVersion]",
-      "name": "[variables('publicIp').name]",
-      "location": "[variables('publicIp').location]",
-      "properties": {
-        "publicIPAllocationMethod": "[variables('publicIp').properties.publicIPAllocationMethod]"
-      }
-    },
-    {
-      "comments": "=== NETWORK SECURITY GROUP: DEFAULT ===",
       "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "[variables('networkSecurityGroup').apiVersion]",
+      "apiVersion": "2020-06-01",
       "name": "[variables('networkSecurityGroup').name]",
       "location": "[variables('networkSecurityGroup').location]",
       "properties": {
-        "securityRules": "[variables('networkSecurityGroup').properties.securityRules]"
+        "securityRules": "[variables('networkSecurityGroup').securityRules]"
       }
     },
     {
-      "comments": "=== VIRTUAL NETWORK ===",
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "[variables('virtualNetwork').apiVersion]",
+      "apiVersion": "2020-06-01",
       "name": "[variables('virtualNetwork').name]",
       "location": "[variables('virtualNetwork').location]",
-      "dependsOn": [
-        "[variables('networkSecurityGroup').resourceId]"
-      ],
       "properties": {
         "addressSpace": {
-          "addressPrefixes": "[variables('virtualNetwork').properties.addressSpace.addressPrefixes]"
+          "addressPrefixes": "[variables('virtualNetwork').addressPrefixes]"
         },
-        "subnets": "[variables('virtualNetwork').properties.subnets]"
-      }
+        "subnets": "[variables('virtualNetwork').subnets]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroup').name)]"
+      ]
     },
     {
-      "comments": "=== NETWORK INTERFACE ===",
       "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "[variables('networkInterface').apiVersion]",
+      "apiVersion": "2020-06-01",
       "name": "[variables('networkInterface').name]",
       "location": "[variables('networkInterface').location]",
-      "dependsOn": [
-        "[variables('publicIp').resourceId]",
-        "[variables('virtualNetwork').resourceId]"
-      ],
       "properties": {
-        "ipConfigurations": "[variables('networkInterface').properties.ipConfigurations]"
-      }
+        "ipConfigurations": "[variables('networkInterface').ipConfigurations]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIp').name)]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork').name)]"
+      ]
     },
     {
-      "comments": "=== VIRTUAL MACHINE ===",
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "[variables('virtualMachine').apiVersion]",
+      "apiVersion": "2018-10-01",
       "name": "[variables('virtualMachine').name]",
       "location": "[variables('virtualMachine').location]",
-      "dependsOn": [
-        "[variables('storageAccount').resourceId]",
-        "[variables('networkInterface').resourceId]"
-      ],
       "properties": {
         "hardwareProfile": {
-          "vmSize": "[variables('virtualMachine').properties.hardwareProfile.vmSize]"
+          "vmSize": "[variables('virtualMachine').vmSize]"
         },
         "osProfile": {
-          "computerName": "[variables('virtualMachine').properties.osProfile.computerName]",
-          "adminUsername": "[variables('virtualMachine').properties.osProfile.adminUsername]",
-          "adminPassword": "[variables('virtualMachine').properties.osProfile.adminPassword]"
+          "computerName": "[variables('virtualMachine').vmComputerName]",
+          "adminUsername": "[variables('virtualMachine').vmAdminUsername]",
+          "adminPassword": "[variables('virtualMachine').vmAdminPassword]"
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "[variables('virtualMachine').properties.storageProfile.imageReference.publisher]",
-            "offer": "[variables('virtualMachine').properties.storageProfile.imageReference.offer]",
-            "sku": "[variables('virtualMachine').properties.storageProfile.imageReference.sku]",
-            "version": "[variables('virtualMachine').properties.storageProfile.imageReference.version]"
+            "publisher": "[variables('virtualMachine').vmImagePublisher]",
+            "offer": "[variables('virtualMachine').vmImageOffer]",
+            "sku": "[variables('virtualMachine').vmImageSku]",
+            "version": "latest"
           },
           "osDisk": {
-            "name": "[variables('virtualMachine').properties.storageProfile.osDisk.name]",
-            "createOption": "[variables('virtualMachine').properties.storageProfile.osDisk.createOption]"
-          },
-          "dataDisks": "[variables('virtualMachine').properties.storageProfile.dataDisks]"
+            "name": "[variables('virtualMachine').vmOSDiskName]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
         },
         "networkProfile": {
-          "networkInterfaces": "[variables('virtualMachine').properties.networkProfile.networkInterfaces]"
+          "networkInterfaces": "[variables('virtualMachine').networkInterfaces]"
         },
         "diagnosticsProfile": {
           "bootDiagnostics": {
             "enabled": true,
-            "storageUri": "[reference(variables('storageAccount').resourceId).primaryEndpoints.blob]"
+            "storageUri": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount').name)).primaryEndpoints.blob]"
           }
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterface').name)]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount').name)]"
+      ]
     },
     {
-      "comments": "=== VIRTUAL MACHINE EXTENSION: CUSTOM SCRIPT ===",
       "type": "Microsoft.Compute/virtualMachines/extensions",
-      "apiVersion": "[variables('virtualMachineExtensionCustomScript').apiVersion]",
+      "apiVersion": "2018-10-01",
       "name": "[variables('virtualMachineExtensionCustomScript').name]",
       "location": "[variables('virtualMachineExtensionCustomScript').location]",
-      "dependsOn": [
-        "[variables('virtualMachine').resourceId]"
-      ],
       "properties": {
         "publisher": "Microsoft.Compute",
         "type": "CustomScriptExtension",
         "typeHandlerVersion": "1.10",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "fileUris": "[variables('virtualMachineExtensionCustomScript').properties.settings.fileUris]"
-        },
-        "protectedSettings": {
-          "commandToExecute": "[variables('virtualMachineExtensionCustomScript').properties.protectedSettings.commandToExecute]"
+          "fileUris": "[variables('virtualMachineExtensionCustomScript').fileUris]",
+          "commandToExecute": "[variables('virtualMachineExtensionCustomScript').commandToExecute]"
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('virtualMachine').name)]"
+      ]
     }
   ],
-
   "outputs": {}
 }
